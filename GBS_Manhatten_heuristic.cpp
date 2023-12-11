@@ -13,10 +13,8 @@ struct PuzzleState {
     vector<vector<int>> state;
     int heuristic;
 
-    // Constructor
     PuzzleState(vector<vector<int>> s) : state(s), heuristic(calculateHeuristic(s)) {}
 
-    // Function to calculate the Manhattan distance heuristic
     int calculateHeuristic(const vector<vector<int>>& s) const {
         int h = 0;
         for (int i = 0; i < N; ++i) {
