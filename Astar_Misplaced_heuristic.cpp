@@ -87,12 +87,10 @@ void aStarSearch(const PuzzleState& initialState) {
             return;
         }
 
-        // Find the coordinates of the blank space
         pair<int, int> blankPos = findBlank(current.state);
         int blankRow = blankPos.first;
         int blankCol = blankPos.second;
 
-        // Generate possible moves and add to the priority queue
         vector<pair<int, int>> moves = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
         for (const auto& move : moves) {
             int newRow = blankRow + move.first;
