@@ -128,7 +128,7 @@ void aStarSearch(const PuzzleState& initialState) {
 
 int main() {
     // Define the initial state
-    vector<vector<int>> initialState = {{1, 2, 3}, {4, 0, 5}, {7, 8, 6}};
+    vector<vector<int>> initialState = {{8, 0, 6}, {5, 4, 7}, {2, 3, 1}};
 
     // Create the initial puzzle state
     PuzzleState initialPuzzleState(initialState, 0);
