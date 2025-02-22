@@ -1,118 +1,92 @@
-#include <iostream>
-#include <vector>
-#include <queue>
-#include <map>
-#include <algorithm>
+import heapq
+import time
+from typing import List, Tuple
 
-using namespace std;
+N = 3
 
-const int N = 3;
+goal_state = [[0, 1, 2], [3, 4, 5], [6, 7, 8]]
 
-const vector<vector<int>> goalState = {{0, 1, 2}, {3, 4, 5}, {6, 7, 8}};
+class PuzzleState:
+    def __init__(self, state: List[List[int]]):
+        self.state = state
+        self.heuristic = self.calculate_misplaced_tiles_heuristic()
+    
+    def calculate_misplaced_tiles_heuristic(self) -> int:
+        misplaced_tiles = sum(
+            1 for i in range(N) for j in range(N) 
+            if self.state[i][j] != 0 and self.state[i][j] != goal_state[i][j]
+        )
+        return misplaced_tiles
+    
+    def is_goal_state(self) -> bool:
+        return self.state == goal_state
+    
+    def print_state(self):
+        for row in self.state:
+            print(" ".join(map(str, row)))
+        print()
+    
+    def __lt__(self, other):
+        return self.heuristic < other.heuristic
 
-struct PuzzleState {
-    vector<vector<int>> state;
-    int heuristic;
+def find_blank(state: List[List[int]]) -> Tuple[int, int]:
+    for i, row in enumerate(state):
+        for j, val in enumerate(row):
+            if val == 0:
+                return i, j
+    raise ValueError("Blank tile not found in the state")
 
-    PuzzleState(vector<vector<int>> s) : state(s), heuristic(calculateMisplacedTilesHeuristic(s)) {}
+def greedy_best_first_search(initial_state: PuzzleState):
+    start_time = time.time()
+    pq = []
+    heapq.heappush(pq, initial_state)
+    visited = set()
+    iterations = 0
 
-    int calculateMisplacedTilesHeuristic(const vector<vector<int>>& s) const {
-        int misplacedTiles = 0;
-        for (int i = 0; i < N; ++i) {
-            for (int j = 0; j < N; ++j) {
-                if (s[i][j] != 0 && s[i][j] != i * N + j + 1) {
-                    // Check if the tile is misplaced
-                    misplacedTiles++;
-                }
-            }
-        }
-        return misplacedTiles;
-    }
+    while pq:
+        iterations += 1
+        current = heapq.heappop(pq)
+        state_tuple = tuple(map(tuple, current.state))
+        
+        if state_tuple in visited:
+            continue
+        
+        visited.add(state_tuple)
+        current.print_state()
+        
+        if current.is_goal_state():
+            end_time = time.time()
+            print(f"Goal state reached in {iterations} iterations.")
+            print(f"Time taken: {end_time - start_time:.6f} seconds.")
+            return
+        
+        blank_row, blank_col = find_blank(current.state)
+        moves = [(-1, 0), (1, 0), (0, -1), (0, 1)]
+        
+        for dr, dc in moves:
+            new_row, new_col = blank_row + dr, blank_col + dc
+            if 0 <= new_row < N and 0 <= new_col < N:
+                new_state = [row[:] for row in current.state]
+                new_state[blank_row][blank_col], new_state[new_row][new_col] = new_state[new_row][new_col], new_state[blank_row][blank_col]
+                
+                next_state = PuzzleState(new_state)
+                if tuple(map(tuple, next_state.state)) not in visited:
+                    heapq.heappush(pq, next_state)
+    
+    print("Goal state not reached!")
+    end_time = time.time()
+    print(f"Total iterations: {iterations}")
+    print(f"Time taken: {end_time - start_time:.6f} seconds.")
 
-    bool isGoalState() const {
-        return state == goalState;
-    }
-
-    void printState() const {
-        for (int i = 0; i < N; ++i) {
-            for (int j = 0; j < N; ++j) {
-                cout << state[i][j] << " ";
-            }
-            cout << endl;
-        }
-        cout << endl;
-    }
-};
-
-struct CompareHeuristic {
-    bool operator()(const PuzzleState& lhs, const PuzzleState& rhs) const {
-        return lhs.heuristic > rhs.heuristic;
-    }
-};
-
-pair<int, int> findBlank(const vector<vector<int>>& state) {
-    for (int i = 0; i < N; ++i) {
-        for (int j = 0; j < N; ++j) {
-            if (state[i][j] == 0) {
-                return {i, j};
-            }
-        }
-    }
-    return {-1, -1}; // Blank not found (error condition)
-}
-
-void greedyBestFirstSearch(const PuzzleState& initialState) {
-    priority_queue<PuzzleState, vector<PuzzleState>, CompareHeuristic> pq;
-    map<vector<vector<int>>, bool> visited;
-
-    pq.push(initialState);
-
-    while (!pq.empty()) {
-        PuzzleState current = pq.top();
-        pq.pop();
-
-        if (visited[current.state]) {
-            continue;
-        }
-
-        visited[current.state] = true;
-
-        current.printState();
-
-        if (current.isGoalState()) {
-            cout << "Goal state reached!" << endl;
-            return;
-        }
-
-        pair<int, int> blankPos = findBlank(current.state);
-        int blankRow = blankPos.first;
-        int blankCol = blankPos.second;
-
-        vector<pair<int, int>> moves = {{-1, 0}, {1, 0}, {0, -1}, {0, 1}};
-        for (const auto& move : moves) {
-            int newRow = blankRow + move.first;
-            int newCol = blankCol + move.second;
-
-            if (newRow >= 0 && newRow < N && newCol >= 0 && newCol < N) {
-                vector<vector<int>> newState = current.state;
-                swap(newState[blankRow][blankCol], newState[newRow][newCol]);
-
-                PuzzleState nextState(newState);
-                if (!visited[nextState.state]) {
-                    pq.push(nextState);
-                }
-            }
-        }
-    }
-
-    cout << "Goal state not reached!" << endl;
-}
-
-int main() {
-    vector<vector<int>> initialState = {{8, 0, 6}, {5, 4, 7}, {2, 3, 1}};
-    PuzzleState initialPuzzleState(initialState);
-
-    greedyBestFirstSearch(initialPuzzleState);
-
-    return 0;
-}
+if __name__ == "__main__":
+    test_cases = [
+        [[8, 0, 6], [5, 4, 7], [2, 3, 1]],
+        [[1, 2, 3], [4, 5, 6], [7, 8, 0]],  # Already solved case
+        [[0, 1, 3], [4, 2, 5], [7, 8, 6]]   # More complex case
+    ]
+    
+    for i, test_case in enumerate(test_cases):
+        print(f"Test Case {i+1}:")
+        initial_puzzle_state = PuzzleState(test_case)
+        greedy_best_first_search(initial_puzzle_state)
+        print("-" * 30)
